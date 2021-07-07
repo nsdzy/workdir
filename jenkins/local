@@ -1,0 +1,124 @@
+echo ${branch}
+
+  cd $WORKSPACE/${dir}
+
+  kubectl config use-context local
+  
+  NACOS_NAMESPACE=lapis-${branch}
+  NACOS_SERVER_ADDRESS=nacos-headless.lapis-cmn.svc.cluster.local:8848
+  IMAGE_NAME_TAG=${dir##*/}-${branch}:latest
+
+  #替换文本nacos环境
+  sed -r -i "s/active: [^ ]+/active: ${branch}/g" ./src/main/resources/bootstrap.yml
+  sed -r -i "s/namespace: [^ ]+/namespace: $NACOS_NAMESPACE/g" ./src/main/resources/bootstrap.yml
+  sed -r -i "s/server-addr: [^ ]+/server-addr: $NACOS_SERVER_ADDRESS/g" ./src/main/resources/bootstrap.yml
+
+  #替换deploy中的harbor镜像地址
+  sed -r -i "s/- image: harbor.laisontech.com\/lapis\/${dir##*/}[^ ]+/- image: harbor.laisontech.com\/lapis\/$IMAGE_NAME_TAG/g" ./src/main/resources/k8s/deploy.yaml
+
+  #maven编译
+  
+  
+  cd $WORKSPACE/lapis-api
+  /var/jenkins_home/tools/hudson.tasks.Maven_MavenInstallation/maven3.6.3/bin/mvn clean package install
+  cd $WORKSPACE/lapis-common
+  /var/jenkins_home/tools/hudson.tasks.Maven_MavenInstallation/maven3.6.3/bin/mvn clean package install
+
+ 
+ cd $WORKSPACE/${dir}/..
+
+ /var/jenkins_home/tools/hudson.tasks.Maven_MavenInstallation/maven3.6.3/bin/mvn clean package install -pl ${dir##*/} -am 
+
+  cd $WORKSPACE/${dir}
+
+
+  docker build -t ${IMAGE_NAME_TAG} .
+
+  #打标签
+  docker tag ${IMAGE_NAME_TAG} harbor.laisontech.com/lapis/${IMAGE_NAME_TAG}
+
+  #镜像推送
+  docker push harbor.laisontech.com/lapis/${IMAGE_NAME_TAG}
+
+  #删除本地镜像
+  docker rmi -f ${IMAGE_NAME_TAG}
+  docker rmi -f harbor.laisontech.com/lapis/${IMAGE_NAME_TAG}
+
+
+#case $dir in
+#lapis-modules/lapis-module-file)
+# sed -i "/就绪探针/i \            - mountPath:\ \/logs\/${dir##*/}\/"  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+# sed -i '/就绪探针/i \              name:\ nginx-vol'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+# sed -i '/就绪探针/i \              readOnly:\ false'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+# sed -i '/---/i \        - name:\ nginx-vol'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+# sed -i '/---/i \          cephfs:'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+# sed -i '/---/i \            monitors:'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+# sed -i '/---/i \            -\ 192.168.2.131:6789'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+# sed -i '/---/i \            user:\ admin'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+# sed -i "/---/i \            path:\ \/log-root\/${branch}\/${dir##*/}\/"  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+# sed -i '/---/i \            secretRef:'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+# sed -i '/---/i \              name:\ ceph-secret'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+# sed -i '/---/i \            readOnly:\ false'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+#;;
+#*)
+# sed -i '/---/i \          volumeMounts:'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+# sed -i "/---/i \            - mountPath:\ \/logs\/${dir##*/}\/"  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+# sed -i '/---/i \              name:\ nginx-vol'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+# sed -i '/---/i \              readOnly:\ false'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+# sed -i '/---/i \      volumes:'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+# sed -i '/---/i \      - name:\ nginx-vol'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+# sed -i '/---/i \        cephfs:'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+# sed -i '/---/i \          monitors:'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+# sed -i '/---/i \          -\ 192.168.2.131:6789'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+# sed -i '/---/i \          user:\ admin'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+# sed -i "/---/i \          path:\ \/log-root\/${branch}\/${dir##*/}\/"  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+# sed -i '/---/i \          secretRef:'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+# sed -i '/---/i \            name:\ ceph-secret'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+# sed -i '/---/i \          readOnly:\ false'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+#;;
+#esac
+
+a=`grep volumes $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml | wc -l`
+if [ $a -eq 1 ];then
+ sed -i '/---/i \        - name:\ nginx-vol'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+ sed -i '/---/i \          cephfs:'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+ sed -i '/---/i \            monitors:'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+ sed -i '/---/i \            -\ 192.168.2.131:6789'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+ sed -i '/---/i \            user:\ admin'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+ sed -i "/---/i \            path:\ \/log-root\/${branch}\/${dir##*/}\/"  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+ sed -i '/---/i \            secretRef:'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+ sed -i '/---/i \              name:\ ceph-secret'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+ sed -i '/---/i \            readOnly:\ false'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+ sed -i "/volumes:/i \            - mountPath:\ \/logs\/${dir##*/}\/"  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+ sed -i '/volumes:/i \              name:\ nginx-vol'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+ sed -i '/volumes:/i \              readOnly:\ false'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+else
+ sed -i '/---/i \          volumeMounts:'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+ sed -i "/---/i \            - mountPath:\ \/logs\/${dir##*/}\/"  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+ sed -i '/---/i \              name:\ nginx-vol'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+ sed -i '/---/i \              readOnly:\ false'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+ sed -i '/---/i \      volumes:'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+ sed -i '/---/i \        - name:\ nginx-vol'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+ sed -i '/---/i \          cephfs:'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+ sed -i '/---/i \            monitors:'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+ sed -i '/---/i \            -\ 192.168.2.131:6789'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+ sed -i '/---/i \            user:\ admin'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+ sed -i "/---/i \            path:\ \/log-root\/${branch}\/${dir##*/}\/"  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+ sed -i '/---/i \            secretRef:'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+ sed -i '/---/i \              name:\ ceph-secret'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+ sed -i '/---/i \            readOnly:\ false'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+fi
+
+
+
+  #部署k8s
+  ret=$(kubectl -n lapis-${branch} get pod -o wide | grep ${dir##*/}-app | wc -l)
+  if [ $ret -eq 0 ];
+    then
+      echo "pod未存在，开始创建"
+      kubectl apply -n lapis-${branch} -f $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+  else
+      echo "pod已存在，先删除，后创建"
+      kubectl delete -n lapis-${branch} -f  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+      kubectl apply -n lapis-${branch} -f $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+  fi
