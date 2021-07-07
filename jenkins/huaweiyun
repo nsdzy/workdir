@@ -1,0 +1,91 @@
+echo ${branch}
+export KUBECONFIG=/root/.kube/config:/root/.kube/confighuawei
+kubectl config use-context external
+
+docker login -u cn-east-3@ALI8KZVPKTUTTENPACD5 -p 852813caee27467b07da829bc58f05367e94890fff34c6d5ccfc797a72d56480 swr.cn-east-3.myhuaweicloud.com
+
+cd $WORKSPACE/${dir}
+
+NACOS_NAMESPACE=lapis-${branch}
+NACOS_SERVER_ADDRESS=nacos-headless.lapis-cmn.svc.cluster.local:8848
+IMAGE_NAME_TAG=${dir##*/}-${branch}:latest
+
+ sed -r -i "s/active: [^ ]+/active: ${branch}/g" ./src/main/resources/bootstrap.yml
+ sed -r -i "s/namespace: [^ ]+/namespace: $NACOS_NAMESPACE/g" ./src/main/resources/bootstrap.yml
+ sed -r -i "s/server-addr: [^ ]+/server-addr: $NACOS_SERVER_ADDRESS/g" ./src/main/resources/bootstrap.yml
+ 
+ 
+ sed -r -i "s/- image: harbor.laisontech.com\/lapis\/${dir##*/}[^ ]+/- image: swr.cn-east-3.myhuaweicloud.com\/lapis\/$IMAGE_NAME_TAG/g" ./src/main/resources/k8s/deploy.yaml
+ 
+  sed -r -i "s/- image: harbor.laisontech.com\/lapis\/skywalking-agent-sidecar:8.6.0/- image: swr.cn-east-3.myhuaweicloud.com\/lapis\/skywalking-agent-sidecar:8.6.0/g" ./src/main/resources/k8s/deploy.yaml
+ 
+ 
+ 
+  cd $WORKSPACE/lapis-common
+  /var/jenkins_home/tools/hudson.tasks.Maven_MavenInstallation/maven3.6.3/bin/mvn clean package install
+  cd $WORKSPACE/lapis-api
+  /var/jenkins_home/tools/hudson.tasks.Maven_MavenInstallation/maven3.6.3/bin/mvn clean package install
+
+ 
+ cd $WORKSPACE/${dir}/..
+ 
+ /var/jenkins_home/tools/hudson.tasks.Maven_MavenInstallation/maven3.6.3/bin/mvn clean install -pl ${dir##*/} -am
+ 
+ cd $WORKSPACE/${dir}
+ 
+ docker build -t ${IMAGE_NAME_TAG} .
+ 
+ docker tag ${IMAGE_NAME_TAG} swr.cn-east-3.myhuaweicloud.com/lapis/${IMAGE_NAME_TAG}
+ 
+ docker push swr.cn-east-3.myhuaweicloud.com/lapis/${IMAGE_NAME_TAG}
+ 
+ 
+docker rmi -f ${IMAGE_NAME_TAG}
+docker rmi -f swr.cn-east-3.myhuaweicloud.com/lapis/${IMAGE_NAME_TAG}
+
+
+# sed -i '/---/i \          volumeMounts:'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+# sed -i "/---/i \          - mountPath:\ \/logs\/${dir##*/}"  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+# sed -i '/---/i \            name:\ nginx-vol'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+# sed -i '/---/i \            readOnly:\ false'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+# sed -i "/---/i \            subPath: ${dir##*/}"  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+# sed -i '/---/i \      volumes: '  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+# sed -i '/---/i \      - name:\ nginx-vol'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+# sed -i '/---/i \        persistentVolumeClaim:'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+# sed -i '/---/i \          claimName:\ cce-sfs-log'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+
+
+
+
+
+
+
+sed -i '/---/i \      imagePullSecrets: '  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+sed -i '/---/i \      - name: test'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml 
+ 
+case $dir in
+lapis-modules/lapis-module-file)
+echo 1
+;;
+lapis-modules/lapis-module-job)
+echo 1
+;;
+lapis-monitor/lapis-monitor-web)
+echo 1
+;;
+*)
+sed -i 's/\  replicas:\ 1/\  replicas:\ 3/g'  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+;;
+esac
+ 
+ret=$(kubectl -n lapis-${branch} get pod -o wide | grep ${dir##*/}-app | wc -l)
+ if [ $ret -eq 0 ];
+   then
+     echo "pod未存在，开始创建"
+     kubectl apply -n lapis-${branch} -f $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+ else
+     echo "pod已存在，先删除，后创建"
+     kubectl delete -n lapis-${branch} -f  $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+     kubectl apply -n lapis-${branch} -f $WORKSPACE/${dir}/src/main/resources/k8s/deploy.yaml
+ fi
+ kubectl config use-context local
