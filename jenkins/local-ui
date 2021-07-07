@@ -1,0 +1,63 @@
+echo ${branch}
+source /etc/profile
+  cd ${dir}
+  NAMESPACE=lapis-${branch}
+  IMAGE_NAME_TAG=${dir##*/}-${branch}:latest
+  
+  #替换文本vue.config环境中的target
+  sed -r -i "s/target: [^ ]+/target: 'lapis-gateway-app-svc:9580',/g" vue.config.js
+
+  #替换deploy中的harbor镜像地址
+  sed -r -i "s/- image: harbor.laisontech.com\/lapis\/[^ ]+/- image: harbor.laisontech.com\/lapis\/$IMAGE_NAME_TAG/g" ./docker/deploy.yaml
+
+  cnpm cache verify
+  cnpm install
+  #cnpm run build:prod --dev
+  #zip -r dist.zip dist
+  
+  #清空dist
+  if [ -d "./docker/dist" ]; then
+      rm -r ./docker/dist
+  fi
+
+  #编译vue
+  #npm run build:docker
+
+ #编译vue(根据不同环境选择对应的配置文件进行打包)
+ #===================新增部分====================
+case $branch in
+	dev)
+	npm run build:dev
+	;;
+	test)
+	npm run build:stage
+	;;
+    prod)
+    npm run build:prod
+	;;
+esac
+ #===============================================
+
+
+  cd docker
+
+  #构建docker
+  docker build -t ${IMAGE_NAME_TAG} .
+  docker tag ${IMAGE_NAME_TAG} harbor.laisontech.com/lapis/${IMAGE_NAME_TAG}
+  docker push harbor.laisontech.com/lapis/${IMAGE_NAME_TAG}
+
+  #删除本地镜像
+  docker rmi -f ${IMAGE_NAME_TAG}
+  docker rmi -f ${IMAGE_NAME_TAG} harbor.laisontech.com/lapis/${IMAGE_NAME_TAG}
+  
+  #部署k8s
+  ret=$(kubectl -n ${NAMESPACE} get pod -o wide | grep ${dir##*/} | wc -l)
+  if [ $ret -eq 0 ];
+    then
+ 	  echo "pod未存在，开始创建"
+ 	  kubectl apply -n ${NAMESPACE} -f deploy.yaml
+   else
+      echo "pod已存在，先删除，后创建"
+      kubectl delete -n ${NAMESPACE} -f deploy.yaml
+      kubectl apply -n ${NAMESPACE} -f deploy.yaml
+  fi
