@@ -1,0 +1,70 @@
+echo ${branch}
+source /etc/profile
+
+export KUBECONFIG=/root/.kube/config:/root/.kube/confighuawei
+kubectl config use-context external
+
+docker login -u cn-east-3@ALI8KZVPKTUTTENPACD5 -p 852813caee27467b07da829bc58f05367e94890fff34c6d5ccfc797a72d56480 swr.cn-east-3.myhuaweicloud.com
+
+cd ${dir}
+NAMESPACE=lapis-${branch}
+IMAGE_NAME_TAG=${dir##*/}-${branch}:latest
+
+sed -r -i "s/target: [^ ]+/target: 'lapis-gateway-app-svc:9580',/g" vue.config.js
+
+sed -r -i "s/- image: harbor.laisontech.com\/lapis\/[^ ]+/- image: swr.cn-east-3.myhuaweicloud.com\/lapis\/$IMAGE_NAME_TAG/g" ./docker/deploy.yaml
+
+
+cnpm cache verify
+cnpm install
+
+
+if [ -d "./docker/dist" ]; then
+    rm -r ./docker/dist
+fi
+
+
+
+ #编译vue(pre和prod都只对prod配置文件打包)
+ #===================新增部分====================
+ npm run build:prod
+ #===============================================
+
+ #npm run build:docker
+
+cd docker
+
+
+docker build -t ${IMAGE_NAME_TAG} .
+docker tag ${IMAGE_NAME_TAG} swr.cn-east-3.myhuaweicloud.com/lapis/${IMAGE_NAME_TAG}
+docker push swr.cn-east-3.myhuaweicloud.com/lapis/${IMAGE_NAME_TAG}
+
+docker rmi -f ${IMAGE_NAME_TAG}
+docker rmi -f ${IMAGE_NAME_TAG}  swr.cn-east-3.myhuaweicloud.com/lapis/${IMAGE_NAME_TAG}
+
+
+sed -i '/---/i \      imagePullSecrets: ' $WORKSPACE/${dir}/docker/deploy.yaml
+sed -i '/---/i \      - name: test'  $WORKSPACE/${dir}/docker/deploy.yaml
+
+case $dir in
+lapis-ui)
+sed -i 's/\ replicas:\ 1/\ replicas:\ 3/g'  $WORKSPACE/${dir}/docker/deploy.yaml
+;;
+*)
+echo $dir
+;;
+esac
+
+
+ret=$(kubectl -n ${NAMESPACE} get pod -o wide | grep ${dir##*/} | wc -l)
+if [ $ret -eq 0 ];
+  then
+    echo "pod未存在，开始创建"
+    kubectl apply -n ${NAMESPACE} -f deploy.yaml
+  else
+    echo "pod已存在，先删除，后创建"
+    kubectl delete -n ${NAMESPACE} -f deploy.yaml
+    kubectl apply -n ${NAMESPACE} -f deploy.yaml
+fi
+
+kubectl config use-context local
