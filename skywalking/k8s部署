@@ -48,6 +48,8 @@ helm install "${SKYWALKING_RELEASE_NAME}" skywalking -n "${SKYWALKING_RELEASE_NA
   --set oap.storageType=elasticsearch7 \
   --set ui.image.tag=8.6.0 \
   --set elasticsearch.imageTag=7.5.1
+  
+(默认部署的是skywalking/values.yaml,连接自己的es需要添加 -f skywalking/values-my-es.yaml;并且修改文件中的host参数，改为es的headless)
 
 删除命令
 helm delete skywalking -n "${SKYWALKING_RELEASE_NAMESPACE}" 
