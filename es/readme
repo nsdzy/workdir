@@ -13,7 +13,7 @@ docker tag docker.elastic.co/kibana/kibana:7.5.1 harbor.laisontech.com/lapis/doc
 docker push harbor.laisontech.com/lapis/docker.elastic.co/kibana/kibana:7.5.1
 
 # 创建命名空间
-kubectl create ns bigdata
+kubectl create ns lapis-cmn
 
 # 创建hostpath 形式的 pv
 cd es
