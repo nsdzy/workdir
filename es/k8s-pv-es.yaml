@@ -1,0 +1,51 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: k8s-pv-es1
+  namespace: lapis-cmn
+  labels:
+    type: local
+spec:
+  storageClassName: es
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: /data/k8s/mnt/es/es1
+  persistentVolumeReclaimPolicy: Recycle
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: k8s-pv-es2
+  namespace: lapis-cmn
+  labels:
+    type: local
+spec:
+  storageClassName: es
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: /data/k8s/mnt/es/es2
+  persistentVolumeReclaimPolicy: Recycle
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: k8s-pv-es3
+  namespace: lapis-cmn
+  labels:
+    type: local
+spec:
+  storageClassName: es
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: /data/k8s/mnt/es/es3
+  persistentVolumeReclaimPolicy: Recycle
