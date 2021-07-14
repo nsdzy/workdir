@@ -1,0 +1,1 @@
+修改configmap里的output下面的host与port为自己的es地址端口
