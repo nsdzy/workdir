@@ -1,0 +1,9 @@
+1 记录时间，协同开发执行sql语句。
+2 将pre分支的服务缩容
+     for i in `kubectl get deployments.apps -n lapis-pre | awk 'NR>1{print $1}'`
+     do
+       kubectl scale deployments.apps -n lapis-pre $i --replicas=2
+     done
+3 拉取代码 ，将服务部署到prod分支（副本数量为1）；
+4 开发测试结束后，建立prod分支的ingress，删除pre分支的ingress，测试是否切换成功。
+5  
