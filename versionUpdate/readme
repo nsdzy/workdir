@@ -4,6 +4,8 @@
      do
        kubectl scale deployments.apps -n lapis-pre $i --replicas=2
      done
-3 拉取代码 ，将服务部署到prod分支（副本数量为1）；
+3 拉取代码 ，将服务部署到prod分支（需要修改jenkins脚本，将副本数量修改为1）；
 4 开发测试结束后，建立prod分支的ingress，删除pre分支的ingress，测试是否切换成功。
-5  
+5  前往192.168.2.129，执行~/shell下的脚本（删除pre分支，并将prod分支扩容）
+
+回滚策略，华为云，mysql,数据备份，binlog日志恢复到指定时间。分支切换回pre。
