@@ -1,0 +1,9 @@
+{
+  "registry-mirrors": ["https://ssaxhzx3.mirror.aliyuncs.com"],
+  "insecure-registries": ["harbor.laisontech.com","192.168.2.128"],
+  "log-driver": "fluentd",
+  "log-opts": {
+    "fluentd-address": "192.168.2.205:30224",
+    "tag": "{{.Name}}"
+  }
+}
