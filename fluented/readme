@@ -1,1 +1,2 @@
 修改configmap里的output下面的host与port为自己的es地址端口
+如何希望日志不落到宿主机，可以将/etc/docker/daemon.json进行修改。日志驱动更改为fluentd
