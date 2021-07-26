@@ -1,0 +1,22 @@
+1：磁盘扩容
+  pv -- vg -- lv 
+# 查看分区模式是mbr(mos)还是gpt
+  fdisk-l
+# 查看lv格式以及挂载情况。
+  df -hT
+  lsblk 
+  blkid
+
+#lv扩容
+sudo lvextend -l +100%FREE /dev/mapper/ubuntu--vg-ubuntu--lv
+#相关命令
+  lvscan
+  lvdisplay
+  lvs 
+# 刷新文件系统
+sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv
+  ext4格式用resize2fs，xfs格式用xfs_growfs
+#
+2：swap禁用
+sudo swapoff -a (临时禁用)
+sudo vim /etc/fstab (注释swap一行，重启永久注释)
