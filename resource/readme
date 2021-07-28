@@ -20,3 +20,11 @@ sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv
 2：swap禁用
 sudo swapoff -a (临时禁用)
 sudo vim /etc/fstab (注释swap一行，重启永久注释)
+
+
+# 设置不可调度
+kubectl cordon master02
+# 驱逐 
+kubectl drain master02 --delete-local-data --ignore-daemonsets --force
+# 恢复
+kubectl uncordon master02
