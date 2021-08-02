@@ -1,0 +1,72 @@
+1、制作 nginx 软件包
+[root@docker-0001 ~]为本地虚拟机
+
+[root@docker-0001 ~]# yum install -y gcc make pcre-devel openssl-devel
+[root@docker-0001 ~]# useradd nginx
+[root@docker-0001 ~]# tar -zxvf nginx-1.12.2.tar.gz
+[root@docker-0001 ~]# cd nginx-1.12.2
+[root@docker-0001 nginx-1.12.2]# ./configure --prefix=/usr/local/nginx --user=nginx --group=nginx --with-http_ssl_module
+[root@docker-0001 nginx-1.12.2]# make && make install
+[root@docker-0001 nginx-1.12.2]# # 拷贝 docker-images/info.html和info.php 到 nginx/html 目录下
+[root@docker-0001 nginx-1.12.2]# cd /usr/local/
+[root@docker-0001 local]# tar czf nginx.tar.gz nginx
+
+2、制作镜像
+
+[root@docker-0001 local]# mkdir /root/nginx ;cd /root/nginx
+[root@docker-0001 nginx]# cp /usr/local/nginx.tar.gz ./
+[root@docker-0001 nginx]# vim Dockerfile 
+FROM centos
+ADD  nginx.tar.gz /usr/local/
+EXPOSE 80
+WORKDIR /usr/local/nginx/html
+CMD  ["/usr/local/nginx/sbin/nginx", "-g", "daemon off;"]
+[root@docker-0001 nginx]# docker build -t swr.cn-east-3.myhuaweicloud.com/lapis/weixiu:v1 .
+[root@docker-0001 nginx]# docker push swr.cn-east-3.myhuaweicloud.com/lapis/weixiu:v1
+
+
+3、k8s部署
+
+[192.168.0.179 ~] kubectl apply -f deploy.yaml
+deploy.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lapis-repair
+  labels:
+    app: lapis-repair
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lapis-repair
+  template:
+    metadata:
+      labels:
+        app: lapis-repair
+    spec:
+      containers:
+      - image: swr.cn-east-3.myhuaweicloud.com/lapis/weixiu:v3
+        name: lapis-repair
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+      imagePullSecrets:
+      - name: test
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lapis-repair-svc
+  labels:
+    app: lapis-repair
+spec:
+  ports:
+  - name: lapis-repair
+    port: 80
+    protocol: TCP
+    targetPort: 80
+    nodePort: 30088
+  selector:
+    app: lapis-repair
+  type: NodePort
