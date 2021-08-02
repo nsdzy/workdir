@@ -27,7 +27,7 @@ CMD  ["/usr/local/nginx/sbin/nginx", "-g", "daemon off;"]
 
 3、k8s部署
 
-[192.168.0.179 ~] kubectl apply -f deploy.yaml
+[192.168.0.179 ~] kubectl apply -f deploy.yaml -n lapis-cmn
 deploy.yaml
 apiVersion: apps/v1
 kind: Deployment
