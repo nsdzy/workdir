@@ -1,39 +1,27 @@
 
 
-一、在linux环境下安装siege
+解决办法
 
-sudo apt-get update && sudo apt-get upgrade  --show-upgraded(更新系统可更新可不更新)
+安装openssl
 
-sudo apt-get install 软件名
+    wget http://www.openssl.org/source/openssl-1.0.2g.tar.gz
+    tar zxvf openssl-1.0.2g.tar.gz
+    cd openssl-1.0.2g/
+    ./config
+    make depend
+    make install
 
-1、下载最新版本的siege
+siege启用SSL
 
-wget  http://download.joedog.org/siege/siege-latest.tar.gz
-
-2、解压并进入siege路径
-
-tar -zxvf siege-latest.tar.gz
-
-cd siege-*/
-
-如果没有安装编译工具，请先安装
-
-sudo apt-get install build-essential
-
-编译安装
-
-./configure
-
-make
-
-sudo make install
-
-创建配置文件
-
-siege.config
-
-修改配置文件
-
-打开~/.sige/sige.conf文件，修改logfile选项
-
-logfile=$(HOME)/sige.log
+    wget http://download.joedog.org/siege/siege-latest.tar.gz
+    tar zxvf siege-latest.tar.gz
+    cd siege-xxx/
+    ./configure --with-ssl=SSL安装路径
+    make
+    make install
+    
+    
+make clean
+清除上次的make命令所产生的object文件（后缀为“.o”的文件）及可执行文件。
+make distclean
+类似make clean，但同时也将configure生成的文件全部删除掉，包括Makefile。
