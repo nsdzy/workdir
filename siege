@@ -1,0 +1,39 @@
+
+
+一、在linux环境下安装siege
+
+sudo apt-get update && sudo apt-get upgrade  --show-upgraded(更新系统可更新可不更新)
+
+sudo apt-get install 软件名
+
+1、下载最新版本的siege
+
+wget  http://download.joedog.org/siege/siege-latest.tar.gz
+
+2、解压并进入siege路径
+
+tar -zxvf siege-latest.tar.gz
+
+cd siege-*/
+
+如果没有安装编译工具，请先安装
+
+sudo apt-get install build-essential
+
+编译安装
+
+./configure
+
+make
+
+sudo make install
+
+创建配置文件
+
+siege.config
+
+修改配置文件
+
+打开~/.sige/sige.conf文件，修改logfile选项
+
+logfile=$(HOME)/sige.log
