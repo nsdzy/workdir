@@ -28,3 +28,7 @@ make distclean
 
 
 siege -c500 -r1 "https://www.laison.top/prod-api/business/meterGroup/listAll" --header="Authorization: Bearer 36ca8654-a770-45f3-89e2-d4b2d2df1393" -i -b -j
+
+
+yum -y install httpd-tools
+ab -n 300 -c 300 -s 30 -T 'Authorization: Bearer f8bede7e-05c6-4199-8f69-c1dcec1f0e9c'  https://www.laison.top/prod-api/business/meterGroup/listAll
