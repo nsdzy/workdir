@@ -25,3 +25,6 @@ make clean
 清除上次的make命令所产生的object文件（后缀为“.o”的文件）及可执行文件。
 make distclean
 类似make clean，但同时也将configure生成的文件全部删除掉，包括Makefile。
+
+
+siege -c500 -r1 "https://www.laison.top/prod-api/business/meterGroup/listAll" --header="Authorization: Bearer 36ca8654-a770-45f3-89e2-d4b2d2df1393" -i -b -j
