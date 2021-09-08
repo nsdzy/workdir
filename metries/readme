@@ -1,1 +1,14 @@
 参考地址：https://blog.csdn.net/boling_cavalry/article/details/105006295?ops_request_misc=&request_id=&biz_id=102&utm_term=metrics-server&utm_medium=distribute.pc_search_result.none-task-blog-2~all~sobaiduweb~default-3-105006295.pc_search_result_control_group&spm=1018.2226.3001.4187
+
+1：下载 
+   wget https://github.com/kubernetes-sigs/metrics-server/archive/v0.3.6.tar.gz
+2：解压并进入目录
+   tar -zxvf v0.3.6.tar.gz
+   cd metrics-server-0.3.6/deploy/1.8+/
+
+3：添加几行解决一下问题
+   metrics-server默认使用的是hostname，但是coredns中并没有三台物理机器的hostname和IP地址的关系，需要改为使用主机IP地址；
+   验证客户端证书的问题，需要改为不验证
+   
+   vim metrics-server-deployment.yaml （添加结果见metrics-server-deployment.yaml）
+   
