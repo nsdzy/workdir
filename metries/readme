@@ -12,3 +12,5 @@
    
    vim metrics-server-deployment.yaml （添加结果见metrics-server-deployment.yaml）
    
+4：部署
+   kubectl apply -f ./
