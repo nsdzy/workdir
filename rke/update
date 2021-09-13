@@ -1,0 +1,6 @@
+删除旧的ssh记录
+ssh-keygen -R node01
+
+更新集群节点
+vim cluster.yaml (进行修改)
+rke up --update-only
